@@ -171,6 +171,7 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
   assert (width >= 0);
   assert (height >= 0);
   assert (0 < maxval && maxval <= PixMax);
+  return NULL;
   // Insert your code here!
 }
 
@@ -293,7 +294,9 @@ int ImageMaxval(Image img) { ///
 /// *max is set to the maximum.
 void ImageStats(Image img, uint8* min, uint8* max) { ///
   assert (img != NULL);
-  // Insert your code here!
+  
+  max=
+  
 }
 
 /// Check if pixel position (x,y) is inside img.
@@ -305,6 +308,7 @@ int ImageValidPos(Image img, int x, int y) { ///
 /// Check if rectangular area (x,y,w,h) is completely inside img.
 int ImageValidRect(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
+  return 0;
   // Insert your code here!
 }
 
@@ -320,7 +324,12 @@ int ImageValidRect(Image img, int x, int y, int w, int h) { ///
 // The returned index must satisfy (0 <= index < img->width*img->height)
 static inline int G(Image img, int x, int y) {
   int index;
-  // Insert your code here!
+  index=x;
+  for (size_t i = 1; i < y; i++)
+  {
+    index=index+img->width;
+  }
+  
   assert (0 <= index && index < img->width*img->height);
   return index;
 }
@@ -355,6 +364,17 @@ void ImageSetPixel(Image img, int x, int y, uint8 level) { ///
 /// resulting in a "photographic negative" effect.
 void ImageNegative(Image img) { ///
   assert (img != NULL);
+  uint8 level;
+  for (size_t i = 1; i <= img->height; i++)
+  {
+    for (size_t j = 1; j <= img->width; j++)
+    {
+      level=ImageGetPixel(img,j,i);
+      ImageSetPixel(img,j,i,255-level)
+    }
+    
+  }
+  
   // Insert your code here!
 }
 
@@ -400,6 +420,7 @@ void ImageBrighten(Image img, double factor) { ///
 /// On failure, returns NULL and errno/errCause are set accordingly.
 Image ImageRotate(Image img) { ///
   assert (img != NULL);
+  return NULL;
   // Insert your code here!
 }
 
@@ -412,6 +433,7 @@ Image ImageRotate(Image img) { ///
 /// On failure, returns NULL and errno/errCause are set accordingly.
 Image ImageMirror(Image img) { ///
   assert (img != NULL);
+  return NULL;
   // Insert your code here!
 }
 
@@ -430,6 +452,7 @@ Image ImageMirror(Image img) { ///
 Image ImageCrop(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
+  return NULL;
   // Insert your code here!
 }
 
@@ -467,6 +490,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidPos(img1, x, y));
+  return 0;
   // Insert your code here!
 }
 
@@ -477,6 +501,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) { ///
 int ImageLocateSubImage(Image img1, int* px, int* py, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
+  return 0;
   // Insert your code here!
 }
 
