@@ -167,12 +167,21 @@ void ImageInit(void) { ///
 /// On success, a new image is returned.
 /// (The caller is responsible for destroying the returned image!)
 /// On failure, returns NULL and errno/errCause are set accordingly.
-Image ImageCreate(int width, int height, uint8 maxval) { ///
+Image ImageCreate(int width, int height, uint8 maxval) { 
   assert (width >= 0);
   assert (height >= 0);
   assert (0 < maxval && maxval <= PixMax);
   return NULL;
-  // Insert your code here!
+  
+  
+  Image* d = (Image*) malloc(sizeof(*d));
+  if (d == NULL) { perror("ImageCreate"); exit(2); }
+  d->width= (int)width;
+  d->height= (int)height;
+  d->maxval= (uint8)maxval;
+  d->pixel = (uint8_t*)malloc(width * height * sizeof(uint8_t));
+  assert( invariant(d) );
+  return d;
 }
 
 /// Destroy the image pointed to by (*imgp).
@@ -182,6 +191,8 @@ Image ImageCreate(int width, int height, uint8 maxval) { ///
 /// Should never fail, and should preserve global errno/errCause.
 void ImageDestroy(Image* imgp) { ///
   assert (imgp != NULL);
+  free(*imgp);///dar free ao pixel*
+  *imgp = NULL;
   // Insert your code here!
 }
 
@@ -294,8 +305,35 @@ int ImageMaxval(Image img) { ///
 /// *max is set to the maximum.
 void ImageStats(Image img, uint8* min, uint8* max) { ///
   assert (img != NULL);
-  
-  max=
+  uint8 level;
+  uint8 maxi=0;
+  uint8 mini=255;
+  for (size_t i = 1; i <= img->height; i++)
+  {
+    for (size_t j = 1; j <= img->width; j++)
+    {
+      level=ImageGetPixel(img,j,i);
+      if (level>maxi )
+      {
+        maxi=level;
+      }
+      if (level<mini )
+      {
+        mini=level;
+      }
+      if (maxi==255 && mini==0)
+      {
+        min=&mini;
+        max=&maxi;
+        return;
+      }
+      
+    }
+    
+  }
+  min=&mini;
+ max=&maxi;
+ return;
   
 }
 
@@ -308,7 +346,7 @@ int ImageValidPos(Image img, int x, int y) { ///
 /// Check if rectangular area (x,y,w,h) is completely inside img.
 int ImageValidRect(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
-  return 0;
+  return ((0 <= x) && (x+w < img->width))&& ((0 <= y) &&(y +h < img->height));
   // Insert your code here!
 }
 
@@ -370,7 +408,7 @@ void ImageNegative(Image img) { ///
     for (size_t j = 1; j <= img->width; j++)
     {
       level=ImageGetPixel(img,j,i);
-      ImageSetPixel(img,j,i,255-level)
+      ImageSetPixel(img,j,i,255-level);
     }
     
   }
