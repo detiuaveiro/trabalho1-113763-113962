@@ -174,14 +174,19 @@ Image ImageCreate(int width, int height, uint8 maxval) {
   return NULL;
   
   
-  Image* d = (Image*) malloc(sizeof(*d));
-  if (d == NULL) { perror("ImageCreate"); exit(2); }
-  d->width= (int)width;
-  d->height= (int)height;
-  d->maxval= (uint8)maxval;
-  d->pixel = (uint8_t*)malloc(width * height * sizeof(uint8_t));
-  assert( invariant(d) );
-  return d;
+  Image img = (Image) malloc(sizeof(img));
+  if (img == NULL) { perror("ImageCreate"); exit(2); }
+  img->width= (int)width;
+  img->height= (int)height;
+  img->maxval= (uint8)maxval;
+  img->pixel = (uint8_t*)malloc(width * height * sizeof(uint8_t));
+  for (size_t i = 0; i <width*height; i++)
+  {
+    img->pixel[i]=0;
+  }
+  
+  assert( invariant(img) );
+  return img;
 }
 
 /// Destroy the image pointed to by (*imgp).
@@ -191,6 +196,9 @@ Image ImageCreate(int width, int height, uint8 maxval) {
 /// Should never fail, and should preserve global errno/errCause.
 void ImageDestroy(Image* imgp) { ///
   assert (imgp != NULL);
+  
+  free((*imgp)->pixel);
+  (*imgp)->pixel=NULL;
   free(*imgp);///dar free ao pixel*
   *imgp = NULL;
   // Insert your code here!
@@ -307,29 +315,18 @@ void ImageStats(Image img, uint8* min, uint8* max) { ///
   assert (img != NULL);
   uint8 level;
   uint8 maxi=0;
-  uint8 mini=255;
-  for (size_t i = 1; i <= img->height; i++)
+  uint8 mini=255;//provavelmente deve haver uma maneira mais eficiente não sei se dá para percurrer o pixel*
+  for (size_t i = 1; i <= (img->height*img->width); i++)
   {
-    for (size_t j = 1; j <= img->width; j++)
+    level=img->pixel[i];
+    if (level<mini)
     {
-      level=ImageGetPixel(img,j,i);
-      if (level>maxi )
-      {
-        maxi=level;
-      }
-      if (level<mini )
-      {
-        mini=level;
-      }
-      if (maxi==255 && mini==0)
-      {
-        min=&mini;
-        max=&maxi;
-        return;
-      }
-      
+      mini=level;
     }
-    
+    if (level>maxi)
+    {
+      maxi=level;
+    }
   }
   min=&mini;
  max=&maxi;
@@ -365,7 +362,7 @@ static inline int G(Image img, int x, int y) {
   index=x;
   for (size_t i = 1; i < y; i++)
   {
-    index=index+img->width;
+    index=index+img->width;//explicar
   }
   
   assert (0 <= index && index < img->width*img->height);
@@ -421,7 +418,23 @@ void ImageNegative(Image img) { ///
 /// all pixels with level>=thr to white (maxval).
 void ImageThreshold(Image img, uint8 thr) { ///
   assert (img != NULL);
-  // Insert your code here!
+ uint8 level;
+  for (size_t i = 1; i <= img->height; i++)
+  {
+    for (size_t j = 1; j <= img->width; j++)
+    {
+      level=ImageGetPixel(img,j,i);
+      if (level<thr)
+      {
+       ImageSetPixel(img,j,i,0);
+      }else{
+        ImageSetPixel(img,j,i,img->maxval);
+      }
+      
+      
+    }
+    
+  }
 }
 
 /// Brighten image by a factor.
@@ -430,8 +443,23 @@ void ImageThreshold(Image img, uint8 thr) { ///
 /// darken the image if factor<1.0.
 void ImageBrighten(Image img, double factor) { ///
   assert (img != NULL);
-  // ? assert (factor >= 0.0);
-  // Insert your code here!
+  assert (factor >= 0.0);
+  uint8 level;
+  for (size_t i = 1; i <= img->height; i++)
+  {
+    for (size_t j = 1; j <= img->width; j++)
+    {
+      level=ImageGetPixel(img,j,i);
+      level=level*factor;
+      ImageSetPixel(img,j,i,level+0.5);//deve ser esta para adicionar 0.5 para arredondamentos
+      
+      
+    }
+    
+  }
+
+
+ 
 }
 
 
@@ -471,8 +499,20 @@ Image ImageRotate(Image img) { ///
 /// On failure, returns NULL and errno/errCause are set accordingly.
 Image ImageMirror(Image img) { ///
   assert (img != NULL);
-  return NULL;
-  // Insert your code here!
+  
+  uint8 level;
+  Image imagemirror=ImageCreate(img->width,img->height,img->maxval);
+  for (size_t i = 1; i <= img->height; i++)
+  {
+    for (size_t j = 1; j <= img->width; j++)
+    { 
+      level=ImageGetPixel(img,j,i);
+      ImageSetPixel(imagemirror,(img->width+1)-j,i,level);
+      
+    }
+    
+  }
+  return imagemirror;
 }
 
 /// Crop a rectangular subimage from img.
@@ -490,8 +530,19 @@ Image ImageMirror(Image img) { ///
 Image ImageCrop(Image img, int x, int y, int w, int h) { ///
   assert (img != NULL);
   assert (ImageValidRect(img, x, y, w, h));
-  return NULL;
-  // Insert your code here!
+  uint8 level;
+  Image imagemcrop=ImageCreate(img->width,img->height,img->maxval);
+for (size_t i = 1; i <= imagemcrop->height; i++)
+  {
+    for (size_t j = 1; j <= imagemcrop->width; j++)
+    { 
+      level=ImageGetPixel(img,j+x,i+y);
+      ImageSetPixel(imagemcrop,j,i,level);
+      
+    }
+    
+  }
+  return imagemcrop;
 }
 
 
@@ -505,7 +556,18 @@ void ImagePaste(Image img1, int x, int y, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidRect(img1, x, y, img2->width, img2->height));
-  // Insert your code here!
+  uint8 level;
+ for (size_t i = y; i <= img1->height; i++)
+  {
+    for (size_t j = x; j <= img1->width; j++)
+    { 
+      level=ImageGetPixel(img2,j,i);
+      ImageSetPixel(img1,j+x,i+y,level);
+      
+      
+    }
+    
+  }
 }
 
 /// Blend an image into a larger image.
@@ -528,8 +590,23 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2) { ///
   assert (img1 != NULL);
   assert (img2 != NULL);
   assert (ImageValidPos(img1, x, y));
-  return 0;
-  // Insert your code here!
+  
+  
+  
+for (size_t i = y; i <= img1->height; i++)
+  {
+    for (size_t j = x; j <= img1->width; j++)
+    { 
+      if (ImageGetPixel(img1,x+j,y+i)!=ImageGetPixel(img2,j,i))
+      {
+        return 0;
+      }
+      
+      
+    }
+    
+  }
+  return 1;
 }
 
 /// Locate a subimage inside another image.
