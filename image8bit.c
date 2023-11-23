@@ -462,10 +462,18 @@ void ImageBrighten(Image img, double factor)
     for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
-      level = level * factor;
-      ImageSetPixel(img, j, i, level + 0.5); // deve ser esta para adicionar 0.5 para arredondamentos
+      if (level * factor > img->maxval)
+      {
+        level = img->maxval;
+      }
+      else
+      {
+        level = level * factor;
+      }
+      ImageSetPixel(img, j, i, level);
     }
   }
+  // o que fazer quando o pixel é preto (level==0??)
 }
 
 /// Geometric transformations
