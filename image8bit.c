@@ -170,7 +170,7 @@ Image ImageCreate(int width, int height, uint8 maxval)
   assert(width >= 0);
   assert(height >= 0);
   assert(0 < maxval && maxval <= PixMax);
-  Image img = (Image)malloc(sizeof(img));
+  Image img = (Image)malloc(sizeof(struct image));
   if (img == NULL)
   {
     perror("ImageCreate");
@@ -372,7 +372,7 @@ static inline int G(Image img, int x, int y)
 {
   int index;
   index = x;
-  for (size_t i = 1; i < y; i++)
+  for (size_t i = 0; i < y; i++)
   {
     index = index + img->width; // explicar
   }
@@ -413,15 +413,14 @@ void ImageNegative(Image img)
 { ///
   assert(img != NULL);
   uint8 level;
-  for (size_t i = 1; i <= img->height; i++)
+  for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 1; j <= img->width; j++)
+    for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
       ImageSetPixel(img, j, i, 255 - level);
     }
   }
-
   // Insert your code here!
 }
 
