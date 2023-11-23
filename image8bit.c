@@ -431,9 +431,9 @@ void ImageThreshold(Image img, uint8 thr)
 { ///
   assert(img != NULL);
   uint8 level;
-  for (size_t i = 1; i <= img->height; i++)
+  for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 1; j <= img->width; j++)
+    for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
       if (level < thr)
@@ -457,9 +457,9 @@ void ImageBrighten(Image img, double factor)
   assert(img != NULL);
   assert(factor >= 0.0);
   uint8 level;
-  for (size_t i = 1; i <= img->height; i++)
+  for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 1; j <= img->width; j++)
+    for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
       level = level * factor;
@@ -509,9 +509,9 @@ Image ImageMirror(Image img)
 
   uint8 level;
   Image imagemirror = ImageCreate(img->width, img->height, img->maxval);
-  for (size_t i = 1; i <= img->height; i++)
+  for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 1; j <= img->width; j++)
+    for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
       ImageSetPixel(imagemirror, (img->width + 1) - j, i, level);
@@ -538,9 +538,9 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
   assert(ImageValidRect(img, x, y, w, h));
   uint8 level;
   Image imagemcrop = ImageCreate(img->width, img->height, img->maxval);
-  for (size_t i = 1; i <= imagemcrop->height; i++)
+  for (size_t i = 0; i < imagemcrop->height; i++)
   {
-    for (size_t j = 1; j <= imagemcrop->width; j++)
+    for (size_t j = 0; j < imagemcrop->width; j++)
     {
       level = ImageGetPixel(img, j + x, i + y);
       ImageSetPixel(imagemcrop, j, i, level);
