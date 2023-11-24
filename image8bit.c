@@ -326,7 +326,7 @@ void ImageStats(Image img, uint8 *min, uint8 *max)
   uint8 level;
   uint8 maxi = 0;
   uint8 mini = 255; // provavelmente deve haver uma maneira mais eficiente não sei se dá para percurrer o pixel*
-  for (size_t i = 1; i <= (img->height * img->width); i++)
+  for (size_t i = 0; i < (img->height * img->width); i++)
   {
     level = img->pixel[i];
     if (level < mini)
@@ -462,13 +462,13 @@ void ImageBrighten(Image img, double factor)
     for (size_t j = 0; j < img->width; j++)
     {
       level = ImageGetPixel(img, j, i);
-      if (level * factor > img->maxval)
+      if (level * factor > img->maxval) /// saturar no maxval
       {
         level = img->maxval;
       }
       else
       {
-        level = level * factor;
+        level = (level * factor) + 0.5; /// arredondar
       }
       ImageSetPixel(img, j, i, level);
     }
@@ -500,7 +500,24 @@ void ImageBrighten(Image img, double factor)
 Image ImageRotate(Image img)
 { ///
   assert(img != NULL);
-  return NULL;
+  uint8 level;
+
+  Image imagerotate = ImageCreate(img->width, img->height, img->maxval);
+  if (imagerotate == NULL)
+  {
+    errCause = "imagerotate is NULL";
+    return NULL;
+  }
+  for (size_t i = 0; i < img->height; i++)
+  {
+    for (size_t j = 0; j < img->width; j++)
+    {
+      level = ImageGetPixel(img, j, i);
+      size_t x = img->width - j - 1; // obter a heigth do pixel rodado
+      ImageSetPixel(imagerotate, i, x, level);
+    }
+  }
+  return imagerotate;
   // Insert your code here!
 }
 
@@ -517,12 +534,21 @@ Image ImageMirror(Image img)
 
   uint8 level;
   Image imagemirror = ImageCreate(img->width, img->height, img->maxval);
+  if (imagemirror == NULL)
+  {
+    errCause = "imagemirror is NULL";
+    return NULL;
+  }
+
   for (size_t i = 0; i < img->height; i++)
   {
     for (size_t j = 0; j < img->width; j++)
     {
+
       level = ImageGetPixel(img, j, i);
-      ImageSetPixel(imagemirror, (img->width + 1) - j, i, level);
+      size_t x = img->width - j - 1; // obter a width do pixel espelhado
+
+      ImageSetPixel(imagemirror, x, i, level);
     }
   }
   return imagemirror;
@@ -545,7 +571,13 @@ Image ImageCrop(Image img, int x, int y, int w, int h)
   assert(img != NULL);
   assert(ImageValidRect(img, x, y, w, h));
   uint8 level;
-  Image imagemcrop = ImageCreate(img->width, img->height, img->maxval);
+  Image imagemcrop = ImageCreate(w, h, img->maxval);
+  if (imagemcrop == NULL)
+  {
+    errCause = "imagemcrop is NULL";
+    return NULL;
+  }
+
   for (size_t i = 0; i < imagemcrop->height; i++)
   {
     for (size_t j = 0; j < imagemcrop->width; j++)
@@ -569,9 +601,9 @@ void ImagePaste(Image img1, int x, int y, Image img2)
   assert(img2 != NULL);
   assert(ImageValidRect(img1, x, y, img2->width, img2->height));
   uint8 level;
-  for (size_t i = y; i <= img1->height; i++)
+  for (size_t i = 0; i < img2->height; i++)
   {
-    for (size_t j = x; j <= img1->width; j++)
+    for (size_t j = 0; j < img2->width; j++)
     {
       level = ImageGetPixel(img2, j, i);
       ImageSetPixel(img1, j + x, i + y, level);
@@ -591,6 +623,17 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   assert(img2 != NULL);
   assert(ImageValidRect(img1, x, y, img2->width, img2->height));
   // Insert your code here!
+  uint8 level, level2, level3;
+  for (size_t i = 1; i < img2->height; i++)
+  {
+    for (size_t j = 1; j < img2->width; j++)
+    {
+      level = ((ImageGetPixel(img2, j, i) * alpha));
+      level2 = ImageGetPixel(img1, j + x, i + y) * (1 - alpha);
+      level3 = (level + level2) + 1;
+      ImageSetPixel(img1, j + x, i + y, level3);
+    }
+  }
 }
 
 /// Compare an image to a subimage of a larger image.
@@ -602,9 +645,9 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
   assert(img2 != NULL);
   assert(ImageValidPos(img1, x, y));
 
-  for (size_t i = y; i <= img1->height; i++)
+  for (size_t i = 0; i < img2->height; i++)
   {
-    for (size_t j = x; j <= img1->width; j++)
+    for (size_t j = 0; j < img2->width; j++)
     {
       if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i))
       {
