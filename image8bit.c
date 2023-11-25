@@ -338,9 +338,10 @@ void ImageStats(Image img, uint8 *min, uint8 *max)
       maxi = level;
     }
   }
-  min = &mini;
-  max = &maxi;
-  return;
+  *min = mini;
+  *max = maxi;
+  
+  // Insert your code here!
 }
 
 /// Check if pixel position (x,y) is inside img.
@@ -624,13 +625,14 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   assert(ImageValidRect(img1, x, y, img2->width, img2->height));
   // Insert your code here!
   uint8 level, level2, level3;
-  for (size_t i = 1; i < img2->height; i++)
+  for (size_t i = 0; i < img2->height; i++)
   {
-    for (size_t j = 1; j < img2->width; j++)
+    for (size_t j = 0; j < img2->width; j++)
     {
-      level = ((ImageGetPixel(img2, j, i) * alpha));
-      level2 = ImageGetPixel(img1, j + x, i + y) * (1 - alpha);
-      level3 = (level + level2) + 1;
+      level = ((ImageGetPixel(img2, j, i) * alpha))+0.5;
+      level2 = ImageGetPixel(img1, j + x, i + y) * (1 - alpha)+0.5;
+      level3 = ((level + level2));
+    
       ImageSetPixel(img1, j + x, i + y, level3);
     }
   }
@@ -644,7 +646,7 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
   assert(img1 != NULL);
   assert(img2 != NULL);
   assert(ImageValidPos(img1, x, y));
-
+  
   for (size_t i = 0; i < img2->height; i++)
   {
     for (size_t j = 0; j < img2->width; j++)
@@ -666,6 +668,23 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 { ///
   assert(img1 != NULL);
   assert(img2 != NULL);
+  
+  
+  for (int i = 0; i < img1->height; i++)
+  {
+    for (int j = 0; j < img1->width; j++)
+    {
+      if (ImageMatchSubImage(img1,j,i,img2))
+      {
+        
+        *px=j;
+        *py=i;
+        return 1;
+      }
+      
+    }
+    
+  }
   return 0;
   // Insert your code here!
 }
@@ -678,5 +697,43 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 /// The image is changed in-place.
 void ImageBlur(Image img, int dx, int dy)
 { ///
-  // Insert your code here!
-}
+  double pixelvalue;
+  double pixel_count;
+  Image temporaryImage=ImageCreate(img->width,img->height,img->maxval);
+  for (size_t i = 0; i < img->height; i++)
+  {
+    for (size_t j = 0; j < img->width; j++)
+    {
+      
+      pixelvalue=0;
+      pixel_count=0;
+      for (int size_width = -dx; size_width <= dx; size_width++)
+      {
+        for (int size_height = -dy; size_height <= dy; size_height++)
+      {
+        
+
+
+        if (ImageValidPos(img,size_width+j,size_height+i))
+        {
+          
+          pixel_count++;
+          pixelvalue=pixelvalue+ImageGetPixel(img,size_width+j,size_height+i);
+        }
+        
+      }
+      }
+      pixelvalue=(pixelvalue)/pixel_count;
+      
+      ImageSetPixel(temporaryImage,j,i,pixelvalue);     
+      
+    }
+    
+  }
+  for (size_t w = 0; w < (img->height * img->width); w++){
+      img->pixel[w]=temporaryImage->pixel[w];
+    }
+
+    ImageDestroy(&temporaryImage);
+    
+}// Insert your code here!
