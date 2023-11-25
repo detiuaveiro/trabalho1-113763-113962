@@ -53,7 +53,8 @@ struct image
   int maxval;   // maximum gray value (pixels with maxval are pure WHITE)
   uint8 *pixel; // pixel data (a raster scan)
 };
-
+int complexety_count_comparações=0;//para analisar as complexides das funções
+int complexety_count_iterações=0;//para analisar as complexides das funções
 // This module follows "design-by-contract" principles.
 // Read `Design-by-Contract.md` for more details.
 
@@ -175,17 +176,17 @@ Image ImageCreate(int width, int height, uint8 maxval)
   {
     perror("ImageCreate");
     exit(2);
-  }
+  }// caso ocorra falha na alocação de espaço para a imagem
   img->width = (int)width;
   img->height = (int)height;
   img->maxval = (uint8)maxval;
-  img->pixel = (uint8_t *)malloc(width * height * sizeof(uint8_t));
+  img->pixel = (uint8_t *)malloc(width * height * sizeof(uint8_t));//alocar espaço para os diversos compomentes da imagem 
   for (size_t i = 0; i < width * height; i++)
   {
     img->pixel[i] = 0;
-  }
+  }// inicialisar os pixeis da imagem
 
-  // assert(invariant(img));
+  //assert(invariant(img));
   return img;
 }
 
@@ -199,8 +200,8 @@ void ImageDestroy(Image *imgp)
   assert(*imgp != NULL);
 
   free((*imgp)->pixel);
-  (*imgp)->pixel = NULL;
-  free(*imgp); /// dar free ao pixel*
+  (*imgp)->pixel = NULL;//primeiro libertar o ponteiro que contem as informações dos pixeis
+  free(*imgp); /// depois libertar o espaço ocupado pela imagem
   *imgp = NULL;
   // Insert your code here!
 }
@@ -324,16 +325,16 @@ void ImageStats(Image img, uint8 *min, uint8 *max)
 { ///
   assert(img != NULL);
   uint8 level;
-  uint8 maxi = 0;
-  uint8 mini = 255; // provavelmente deve haver uma maneira mais eficiente não sei se dá para percurrer o pixel*
-  for (size_t i = 0; i < (img->height * img->width); i++)
+  uint8 maxi = 0;//variaveis temporarias para determinar o pixel level
+  uint8 mini = 255; 
+  for (size_t i = 0; i < (img->height * img->width); i++)//percurrer o ponteiro *pixel
   {
     level = img->pixel[i];
-    if (level < mini)
+    if (level < mini) //determinar o pixel pixel mais cincento
     {
       mini = level;
     }
-    if (level > maxi)
+    if (level > maxi)// determinar o pixel mais claro 
     {
       maxi = level;
     }
@@ -355,8 +356,8 @@ int ImageValidPos(Image img, int x, int y)
 int ImageValidRect(Image img, int x, int y, int w, int h)
 { ///
   assert(img != NULL);
-  return ((0 <= x) && (x + w < img->width)) && ((0 <= y) && (y + h < img->height));
-  // Insert your code here!
+  // determinar se a posição inicial x mais a width do retangulo ficam dentro da imagem
+  return ((0 <= x) && (x + w < img->width)) && ((0 <= y) && (y + h < img->height));// mesma coisa para y e height
 }
 
 /// Pixel get & set operations
@@ -372,13 +373,13 @@ int ImageValidRect(Image img, int x, int y, int w, int h)
 static inline int G(Image img, int x, int y)
 {
   int index;
-  index = x;
-  for (size_t i = 0; i < y; i++)
+  index = x;// determinar em que coluna está 
+  for (size_t i = 0; i < y; i++)//percurrer a imagem pelas varias linhas 
   {
-    index = index + img->width; // explicar
+    index = index + img->width; //sumar o tamanho de cada linha até chegar á linha das coordenadas
   }
 
-  assert(0 <= index && index < img->width * img->height);
+  assert(0 <= index && index < img->width * img->height);//verificar se o index pode existir nesta imagem
   return index;
 }
 
@@ -413,14 +414,10 @@ void ImageSetPixel(Image img, int x, int y, uint8 level)
 void ImageNegative(Image img)
 { ///
   assert(img != NULL);
-  uint8 level;
-  for (size_t i = 0; i < img->height; i++)
+  
+  for (size_t i = 0; i < (img->height * img->width); i++)//percurrer o ponteiro *pixel
   {
-    for (size_t j = 0; j < img->width; j++)
-    {
-      level = ImageGetPixel(img, j, i);
-      ImageSetPixel(img, j, i, 255 - level);
-    }
+    img->pixel[i]=(255-img->pixel[i]);//inverter o nivel do pixel
   }
   // Insert your code here!
 }
@@ -432,21 +429,34 @@ void ImageThreshold(Image img, uint8 thr)
 { ///
   assert(img != NULL);
   uint8 level;
-  for (size_t i = 0; i < img->height; i++)
+  for (size_t i = 0; i < (img->height * img->width); i++)//percurrer o ponteiro *pixel
   {
-    for (size_t j = 0; j < img->width; j++)
+    level=(img->pixel[i]);//reterir o nivel do pixel
+    if (level<thr)
     {
-      level = ImageGetPixel(img, j, i);
-      if (level < thr)
-      {
-        ImageSetPixel(img, j, i, 0);
-      }
-      else
-      {
-        ImageSetPixel(img, j, i, img->maxval);
-      }
+      img->pixel[i]=0;//se for inferior  ao thr o pixel fica 0
+    }else{
+      img->pixel[i]=img->maxval;//se for superior ao thr o pixel fica maxval
     }
+    
   }
+
+  //
+  //for (size_t i = 0; i < img->height; i++)
+ // {
+   // for (size_t j = 0; j < img->width; j++)
+    //{
+     // level = ImageGetPixel(img, j, i);
+      //if (level < thr)
+      //{
+       // ImageSetPixel(img, j, i, 0);
+      //}
+      //else
+     // {
+      //  ImageSetPixel(img, j, i, img->maxval);
+     // }
+   // }
+  //}//
 }
 
 /// Brighten image by a factor.
@@ -458,22 +468,37 @@ void ImageBrighten(Image img, double factor)
   assert(img != NULL);
   assert(factor >= 0.0);
   uint8 level;
-  for (size_t i = 0; i < img->height; i++)
+  uint8 level_factor;
+
+  for (size_t i = 0; i < (img->height * img->width); i++)//percurrer o ponteiro *pixel
   {
-    for (size_t j = 0; j < img->width; j++)
+    level=(img->pixel[i]);//reterir o nivel do pixel
+    level_factor=(level*factor)+0.5;//determinar o nivel do pixel multiplicado pelo factor e com arredondamento
+    if (level_factor>img->maxval)
     {
-      level = ImageGetPixel(img, j, i);
-      if (level * factor > img->maxval) /// saturar no maxval
-      {
-        level = img->maxval;
-      }
-      else
-      {
-        level = (level * factor) + 0.5; /// arredondar
-      }
-      ImageSetPixel(img, j, i, level);
+      img->pixel[i]=img->maxval;//se o nivel for superior ao maxval então fica maxval
+    }else{
+      img->pixel[i]=level_factor;//se o nivel for inferior ao maxval então fica level_factor
     }
+    
+    
   }
+ // for (size_t i = 0; i < img->height; i++)
+  //{
+   // for (size_t j = 0; j < img->width; j++)
+    //{
+     // level = ImageGetPixel(img, j, i);
+      //if (level * factor > img->maxval) /// saturar no maxval
+      //{
+       // level = img->maxval;
+     // }
+      //else
+      //{
+       // level = (level * factor) + 0.5; /// arredondar
+      //}
+      //ImageSetPixel(img, j, i, level);
+    //}
+  //}
   // o que fazer quando o pixel é preto (level==0??)
 }
 
@@ -503,18 +528,18 @@ Image ImageRotate(Image img)
   assert(img != NULL);
   uint8 level;
 
-  Image imagerotate = ImageCreate(img->width, img->height, img->maxval);
+  Image imagerotate = ImageCreate(img->width, img->height, img->maxval);//criar uma imagem nova
   if (imagerotate == NULL)
   {
     errCause = "imagerotate is NULL";
     return NULL;
-  }
+  }//caso não consiga criar a imagem
   for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 0; j < img->width; j++)
+    for (size_t j = 0; j < img->width; j++)//percurrer os pixeis da imagem original
     {
       level = ImageGetPixel(img, j, i);
-      size_t x = img->width - j - 1; // obter a heigth do pixel rodado
+      size_t x = img->width - j - 1; // obter a heigth do pixel aredondado
       ImageSetPixel(imagerotate, i, x, level);
     }
   }
@@ -534,16 +559,16 @@ Image ImageMirror(Image img)
   assert(img != NULL);
 
   uint8 level;
-  Image imagemirror = ImageCreate(img->width, img->height, img->maxval);
+  Image imagemirror = ImageCreate(img->width, img->height, img->maxval);//criar uma imagem nova
   if (imagemirror == NULL)
   {
     errCause = "imagemirror is NULL";
     return NULL;
-  }
+  }//caso não consiga criar a imagem
 
   for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 0; j < img->width; j++)
+    for (size_t j = 0; j < img->width; j++)//percurrer os pixeis da imagem original
     {
 
       level = ImageGetPixel(img, j, i);
@@ -570,20 +595,20 @@ Image ImageMirror(Image img)
 Image ImageCrop(Image img, int x, int y, int w, int h)
 { ///
   assert(img != NULL);
-  assert(ImageValidRect(img, x, y, w, h));
+  assert(ImageValidRect(img, x, y, w, h));//verificar se o retangulo está dentro da imagem
   uint8 level;
-  Image imagemcrop = ImageCreate(w, h, img->maxval);
+  Image imagemcrop = ImageCreate(w, h, img->maxval);//criar uma imagem nova
   if (imagemcrop == NULL)
   {
     errCause = "imagemcrop is NULL";
     return NULL;
-  }
+  }//caso não consiga criar a imagem
 
   for (size_t i = 0; i < imagemcrop->height; i++)
   {
-    for (size_t j = 0; j < imagemcrop->width; j++)
+    for (size_t j = 0; j < imagemcrop->width; j++)//percurrer os pixeis da imagem original
     {
-      level = ImageGetPixel(img, j + x, i + y);
+      level = ImageGetPixel(img, j + x, i + y);//buscar o nivel do pixel na imagem correspondente á imagemcrop
       ImageSetPixel(imagemcrop, j, i, level);
     }
   }
@@ -604,9 +629,9 @@ void ImagePaste(Image img1, int x, int y, Image img2)
   uint8 level;
   for (size_t i = 0; i < img2->height; i++)
   {
-    for (size_t j = 0; j < img2->width; j++)
+    for (size_t j = 0; j < img2->width; j++)//percurrer os pixeis da imagem2 que se pretende por na img1
     {
-      level = ImageGetPixel(img2, j, i);
+      level = ImageGetPixel(img2, j, i);//buscar o nivel do pixel na imagem2 que se pretende por na imagem1
       ImageSetPixel(img1, j + x, i + y, level);
     }
   }
@@ -627,11 +652,11 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   uint8 level, level2, level3;
   for (size_t i = 0; i < img2->height; i++)
   {
-    for (size_t j = 0; j < img2->width; j++)
+    for (size_t j = 0; j < img2->width; j++)//percurrer os pixeis da img2
     {
-      level = ((ImageGetPixel(img2, j, i) * alpha))+0.5;
-      level2 = ImageGetPixel(img1, j + x, i + y) * (1 - alpha)+0.5;
-      level3 = ((level + level2));
+      level = ((ImageGetPixel(img2, j, i) * alpha))+0.5;//buscar o nivel do pixel da img2 com o valor de alpha e com arredondamento
+      level2 = ImageGetPixel(img1, j + x, i + y) * (1 - alpha)+0.5;//buscar o nivel do pixel da img1 com o valor de alpha e com arredondamento
+      level3 = ((level + level2));//calcular o valor do conjunto dos dois pixeis
     
       ImageSetPixel(img1, j + x, i + y, level3);
     }
@@ -649,12 +674,20 @@ int ImageMatchSubImage(Image img1, int x, int y, Image img2)
   
   for (size_t i = 0; i < img2->height; i++)
   {
+    complexety_count_iterações++;//contador de complexidade de iterações "for"
     for (size_t j = 0; j < img2->width; j++)
-    {
+    { 
+      complexety_count_iterações++;//contador de complexidade de iterações "for"
+      
+      if (ImageValidPos(img1, x + j, y + i))//verificar se o pixel a analisar está dentro da imagem
+      {
+        
+      
+      complexety_count_comparações++;//contador de complexidade de comparações de analise de nivel de grey
       if (ImageGetPixel(img1, x + j, y + i) != ImageGetPixel(img2, j, i))
       {
         return 0;
-      }
+      }}//se calhar podemos fazer um skip 
     }
   }
   return 1;
@@ -668,23 +701,28 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 { ///
   assert(img1 != NULL);
   assert(img2 != NULL);
-  
+  complexety_count_iterações=0;//contador de complexidade de iterações "for"
+  complexety_count_comparações=0;//contador de complexidade de comparações de analise de nivel de grey
   
   for (int i = 0; i < img1->height; i++)
   {
+    complexety_count_iterações++;//contador de complexidade de iterações "for"
     for (int j = 0; j < img1->width; j++)
     {
+      complexety_count_iterações++;//contador de complexidade de iterações "for"
       if (ImageMatchSubImage(img1,j,i,img2))
       {
         
-        *px=j;
+        *px=j;//posicionar o ponteiro para os valores de (x,y)
         *py=i;
+        printf("comparações-%d;iterações-%d\n",complexety_count_comparações,complexety_count_iterações);//analise de complexidade
         return 1;
       }
       
     }
     
   }
+  printf("comparações-%d;iterações-%d\n",complexety_count_comparações,complexety_count_iterações);//analise de complexidade
   return 0;
   // Insert your code here!
 }
@@ -699,31 +737,37 @@ void ImageBlur(Image img, int dx, int dy)
 { ///
   double pixelvalue;
   double pixel_count;
-  Image temporaryImage=ImageCreate(img->width,img->height,img->maxval);
+  complexety_count_iterações=0;//contador de complexidade de iterações "for"
+  complexety_count_comparações=0;//contador de complexidade de comparações de analise de nivel de grey
+  Image temporaryImage=ImageCreate(img->width,img->height,img->maxval);//criar um imagem temporaria para colocar os pixeis em que foi executado o blur
   for (size_t i = 0; i < img->height; i++)
   {
-    for (size_t j = 0; j < img->width; j++)
+    complexety_count_iterações++;
+    for (size_t j = 0; j < img->width; j++)//escolher um pixel para fazer blur 
     {
+      complexety_count_iterações++;
       
       pixelvalue=0;
       pixel_count=0;
       for (int size_width = -dx; size_width <= dx; size_width++)
       {
-        for (int size_height = -dy; size_height <= dy; size_height++)
+        complexety_count_iterações++;
+        for (int size_height = -dy; size_height <= dy; size_height++)//selecionar os pixeis que vão ser usados para fazer o blur do pixel original
       {
+        complexety_count_iterações++;
         
 
 
-        if (ImageValidPos(img,size_width+j,size_height+i))
+        if (ImageValidPos(img,size_width+j,size_height+i))//verificar se o pixel está dentro da imagem
         {
           
-          pixel_count++;
-          pixelvalue=pixelvalue+ImageGetPixel(img,size_width+j,size_height+i);
+          pixel_count++;//numero de pixeis a fazer um blur
+          pixelvalue=pixelvalue+ImageGetPixel(img,size_width+j,size_height+i);//valor de niveis dos pixeis a considerar
         }
         
       }
       }
-      pixelvalue=(pixelvalue)/pixel_count;
+      pixelvalue=(pixelvalue)/pixel_count;//calcular o nivel do pixel depois do blur
       
       ImageSetPixel(temporaryImage,j,i,pixelvalue);     
       
@@ -731,9 +775,11 @@ void ImageBlur(Image img, int dx, int dy)
     
   }
   for (size_t w = 0; w < (img->height * img->width); w++){
-      img->pixel[w]=temporaryImage->pixel[w];
+    complexety_count_iterações++;
+      img->pixel[w]=temporaryImage->pixel[w];//por na imagem original o nivel dos pixeis da imagem temporaria
     }
 
-    ImageDestroy(&temporaryImage);
+    ImageDestroy(&temporaryImage);//destroir imagem temporaria
+    printf("comparações-%d;iterações-%d\n",complexety_count_comparações,complexety_count_iterações);//analise de complexidade
     
 }// Insert your code here!
