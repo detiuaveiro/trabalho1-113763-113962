@@ -794,6 +794,7 @@ void ImageBlur(Image img, int dx, int dy)
   ImageDestroy(&temporaryImage);                                                                     // destroir imagem temporaria
   printf("comparações-%d;iterações-%d\n", complexety_count_comparações, complexety_count_iterações); // analise de complexidade
 }
+
 // void ImageBlur(Image img, int dx, int dy)
 // { ///
 //   double pixelvalue;
