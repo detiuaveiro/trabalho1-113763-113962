@@ -10,7 +10,9 @@
 /// 2013, 2023
 
 // Student authors (fill in below):
-// NMec:  Name:
+//
+// Name:André Atanásio Alves Nmec: 113962
+// Name:Francisco José Gomes Pinto Nmec: 113763
 //
 //
 //
@@ -349,6 +351,7 @@ void ImageStats(Image img, uint8 *min, uint8 *max)
 int ImageValidPos(Image img, int x, int y)
 { ///
   assert(img != NULL);
+  complexety_count_comparações++; // contador de complexidade de comparações
   return (0 <= x && x < img->width) && (0 <= y && y < img->height);
 }
 
@@ -656,9 +659,22 @@ void ImageBlend(Image img1, int x, int y, Image img2, double alpha)
   {
     for (size_t j = 0; j < img2->width; j++) // percurrer os pixeis da img2
     {
-      level = ((ImageGetPixel(img2, j, i) * alpha) + ImageGetPixel(img1, j + x, i + y) * (1 - alpha)) + 0.5; // buscar o nivel do pixel da img2 com o valor de alpha
-                                                                                                             // buscar o nivel do pixel da img1 com o valor de alpha
-                                                                                                             // calcular o valor do conjunto dos dois pixeis e arredondar
+      if (alpha > 1.0)
+      {
+        if ((ImageGetPixel(img2, j, i) * alpha) + 0.5 > img1->maxval)
+        {
+          level = img1->maxval;
+        }
+        else
+        {
+          level = (ImageGetPixel(img2, j, i) * alpha) + 0.5;
+        }
+      }
+      else
+      {
+        level = ((ImageGetPixel(img2, j, i) * alpha) + ImageGetPixel(img1, j + x, i + y) * (1 - alpha)) + 0.5; // buscar o nivel do pixel da img2 com o valor de alpha
+      }                                                                                                        // buscar o nivel do pixel da img1 com o valor de alpha
+                                                                                                               // calcular o valor do conjunto dos dois pixeis e arredondar
 
       ImageSetPixel(img1, j + x, i + y, level); // colocar o nivel do pixel na imagem1
     }
@@ -733,10 +749,57 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 /// Each pixel is substituted by the mean of the pixels in the rectangle
 /// [x-dx, x+dx]x[y-dy, y+dy].
 /// The image is changed in-place.
+void ImageBlur(Image img, int dx, int dy)
+{ ///
+  double pixelvalue;
+  double pixel_count;
+  complexety_count_iterações = 0;                                           // contador de complexidade de iterações "for"
+  complexety_count_comparações = 0;                                         // contador de complexidade de comparações de analise de nivel de grey
+  Image temporaryImage = ImageCreate(img->width, img->height, img->maxval); // criar um imagem temporaria para colocar os pixeis em que foi executado o blur
+  for (size_t i = 0; i < img->height; i++)
+  {
+    complexety_count_iterações++;
+    for (size_t j = 0; j < img->width; j++) // escolher um pixel para fazer blur
+    {
+      complexety_count_iterações++;
+
+      pixelvalue = 0;
+      pixel_count = 0;
+      for (int size_width = -dx; size_width <= dx; size_width++)
+      {
+        complexety_count_iterações++;
+        for (int size_height = -dy; size_height <= dy; size_height++) // selecionar os pixeis que vão ser usados para fazer o blur do pixel original
+        {
+          complexety_count_iterações++;
+
+          if (ImageValidPos(img, size_width + j, size_height + i)) // verificar se o pixel está dentro da imagem
+          {
+
+            pixel_count++;                                                                 // numero de pixeis a fazer um blur
+            pixelvalue = pixelvalue + ImageGetPixel(img, size_width + j, size_height + i); // valor de niveis dos pixeis a considerar
+          }
+        }
+      }
+      pixelvalue = ((pixelvalue) / pixel_count) + 0.5; // calcular o nivel do pixel depois do blur com arredondamento
+
+      ImageSetPixel(temporaryImage, j, i, pixelvalue);
+    }
+  }
+  for (size_t w = 0; w < (img->height * img->width); w++)
+  {
+    complexety_count_iterações++;
+    img->pixel[w] = temporaryImage->pixel[w]; // por na imagem original o nivel dos pixeis da imagem temporaria
+  }
+
+  ImageDestroy(&temporaryImage);                                                                     // destroir imagem temporaria
+  printf("comparações-%d;iterações-%d\n", complexety_count_comparações, complexety_count_iterações); // analise de complexidade
+}
 // void ImageBlur(Image img, int dx, int dy)
 // { ///
 //   double pixelvalue;
 //   double pixel_count;
+//   int primeiravez = 1;
+
 //   complexety_count_iterações = 0;                                           // contador de complexidade de iterações "for"
 //   complexety_count_comparações = 0;                                         // contador de complexidade de comparações de analise de nivel de grey
 //   Image temporaryImage = ImageCreate(img->width, img->height, img->maxval); // criar um imagem temporaria para colocar os pixeis em que foi executado o blur
@@ -749,24 +812,75 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 
 //       pixelvalue = 0;
 //       pixel_count = 0;
-//       for (int size_width = -dx; size_width <= dx; size_width++)
+//       if (primeiravez)
 //       {
-//         complexety_count_iterações++;
-//         for (int size_height = -dy; size_height <= dy; size_height++) // selecionar os pixeis que vão ser usados para fazer o blur do pixel original
+//         for (int size_width = -dx; size_width <= dx; size_width++)
 //         {
 //           complexety_count_iterações++;
-
-//           if (ImageValidPos(img, size_width + j, size_height + i)) // verificar se o pixel está dentro da imagem
+//           for (int size_height = -dy; size_height <= dy; size_height++) // selecionar os pixeis que vão ser usados para fazer o blur do pixel original
 //           {
+//             complexety_count_iterações++;
 
-//             pixel_count++;                                                                 // numero de pixeis a fazer um blur
-//             pixelvalue = pixelvalue + ImageGetPixel(img, size_width + j, size_height + i); // valor de niveis dos pixeis a considerar
+//             if (ImageValidPos(img, size_width + j, size_height + i)) // verificar se o pixel está dentro da imagem
+//             {
+
+//               pixel_count++;                                                                 // numero de pixeis a fazer um blur
+//               pixelvalue = pixelvalue + ImageGetPixel(img, size_width + j, size_height + i); // valor de niveis dos pixeis a considerar
+//             }
 //           }
 //         }
-//       }
-//       pixelvalue = ((pixelvalue) / pixel_count) + 0.5; // calcular o nivel do pixel depois do blur com arredondamento
+//         pixelvalue = (pixelvalue) / pixel_count; // calcular o nivel do pixel depois do blur
 
-//       ImageSetPixel(temporaryImage, j, i, pixelvalue);
+//         ImageSetPixel(temporaryImage, j, i, pixelvalue);
+//         primeiravez = 0;
+//       }
+//       else
+//       {
+//         for (int size_height = -dy; size_height <= dy; size_height++) // retirar a coluna mais á esquerda
+//         {
+//           complexety_count_iterações++;
+//           if (ImageValidPos(img, j - dx, size_height + i)) // verificar se o pixel está dentro da imagem
+//           {
+
+//             pixel_count--;                                                         // numero de pixeis a fazer um blur
+//             pixelvalue = pixelvalue - ImageGetPixel(img, j - dx, size_height + i); // valor de niveis dos pixeis a considerar
+//           }
+//         }
+//         for (int size_height = -dy; size_height <= dy; size_height++) // adicionar a coluna mais á direita
+//         {
+//           complexety_count_iterações++;
+//           if (ImageValidPos(img, j + dx, size_height + i)) // verificar se o pixel está dentro da imagem
+//           {
+
+//             pixel_count++;                                                         // numero de pixeis a fazer um blur
+//             pixelvalue = pixelvalue + ImageGetPixel(img, j + dx, size_height + i); // valor de niveis dos pixeis a considerar
+//           }
+//         }
+//         pixelvalue = (pixelvalue) / pixel_count; // calcular o nivel do pixel depois do blur
+
+//         ImageSetPixel(temporaryImage, j, i, pixelvalue);
+//       }
+//     }
+
+//     for (int size_width = -dx; size_width <= dx; size_width++) // remover a linha superior
+//     {
+//       complexety_count_iterações++;
+//       if (ImageValidPos(img, size_width, i - dy)) // verificar se o pixel está dentro da imagem
+//       {
+
+//         pixel_count--;                                                    // numero de pixeis a fazer um blur
+//         pixelvalue = pixelvalue - ImageGetPixel(img, size_width, i - dy); // valor de niveis dos pixeis a considerar
+//       }
+//     }
+//     for (int size_width = -dx; size_width <= dx; size_width++) // adicionar a linha inferior
+//     {
+//       complexety_count_iterações++;
+//       if (ImageValidPos(img, size_width, i + dy)) // verificar se o pixel está dentro da imagem
+//       {
+
+//         pixel_count++;                                                    // numero de pixeis a fazer um blur
+//         pixelvalue = pixelvalue + ImageGetPixel(img, size_width, i + dy); // valor de niveis dos pixeis a considerar
+//       }
 //     }
 //   }
 //   for (size_t w = 0; w < (img->height * img->width); w++)
@@ -778,76 +892,5 @@ int ImageLocateSubImage(Image img1, int *px, int *py, Image img2)
 //   ImageDestroy(&temporaryImage);                                                                     // destroir imagem temporaria
 //   printf("comparações-%d;iterações-%d\n", complexety_count_comparações, complexety_count_iterações); // analise de complexidade
 // }
-void ImageBlur(Image img, int dx, int dy)
-{
-  Image temporaryImage = ImageCreate(img->width, img->height, img->maxval);
-
-  // Blur the fit row
-  for (size_t j = 0; j < img->width; j++)
-  {
-    double pixelvalue = 0.0;
-    double pixel_count = 0;
-
-    for (int size_height = -dy; size_height <= dy; size_height++)
-    {
-      for (int size_width = -dx; size_width <= dx; size_width++)
-      {
-        int x = (int)j + size_width;
-        int y = size_height;
-
-        if (ImageValidPos(img, x, y))
-        {
-          pixel_count++;
-          pixelvalue += ImageGetPixel(img, x, y);
-        }
-      }
-    }
-
-    pixelvalue = (pixel_count > 0) ? (pixelvalue / pixel_count) + 0.5 : 0.0;
-    ImageSetPixel(temporaryImage, j, 0, pixelvalue);
-  }
-  // Blur and update the rest of the rows
-  for (size_t i = 1; i < img->height; i++)
-  {
-    for (size_t j = 0; j < img->width; j++)
-    {
-      double pixelvalue = ImageGetPixel(img, j, i - 1);
-      double pixel_count = 0;
-
-      // Subtract the topmost pixel from the previous row
-      int x = (int)j;
-      int y = (int)i - dy - 1;
-
-      if (ImageValidPos(img, x, y))
-      {
-
-        pixelvalue -= ImageGetPixel(img, x, y);
-      }
-
-      // Add the new bottom pixel
-      x = (int)j;
-      y = (int)i + dy;
-
-      if (ImageValidPos(img, x, y))
-      {
-        pixel_count++;
-        pixelvalue += ImageGetPixel(img, x, y);
-      }
-
-      // Calculate the mean value
-      pixelvalue = (pixel_count > 0) ? (pixelvalue / pixel_count) + 0.5 : 0.0;
-      ImageSetPixel(temporaryImage, j, i, pixelvalue);
-    }
-
-    // Update the current row in the original image
-    for (size_t j = 0; j < img->width; j++)
-    {
-      img->pixel[i * img->width + j] = temporaryImage->pixel[i * img->width + j];
-    }
-  }
-
-  ImageDestroy(&temporaryImage);
-  printf("comparações-%d;iterações-%d\n", complexety_count_comparações, complexety_count_iterações);
-}
 
 // Insert your code here!
